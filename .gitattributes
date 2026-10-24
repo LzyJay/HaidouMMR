@@ -1,0 +1,10 @@
+# 默认按文本处理，仓库内统一 LF
+* text=auto eol=lf
+
+# 批处理脚本：不让 git 碰换行符。
+# 验证看板.bat 是 CRLF + UTF-8 BOM，cmd 对首行 BOM 与换行敏感，转换会改行为。
+*.bat -text
+
+# 二进制资源
+*.ico binary
+*.png binary

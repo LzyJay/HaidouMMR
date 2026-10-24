@@ -1,0 +1,734 @@
+/* ============================================================
+   海斗隐藏分 · 桌面版主题
+   ------------------------------------------------------------
+   本文件是看板视觉层的唯一来源，由 06_桌面版\apply_theme.py
+   注入到 03_看板\海斗隐藏分_数据看板.html 的 <style> 块。
+
+   改主题：编辑本文件 → python 06_桌面版\apply_theme.py
+   回滚：  python 06_桌面版\apply_theme.py --restore
+
+   约束：所有 id / class 必须与看板 JS 及断言脚本保持一致。
+   本文件只改视觉表现，**绝不删除**任何选择器 ——
+   一旦删掉某个 class，_verify_dash.js 的 44 条断言就会挂。
+   （新增选择器是允许的：新功能需要新的 class，见文件末尾的「玩家弹层」。）
+   ============================================================ */
+
+:root{
+  --bg:#070d1a; --bg2:#0a1326;
+  --panel:#0e1a33; --panel2:#12203f; --panel3:#17284a;
+  --line:#20355f; --line2:#16264a;
+  --txt:#e3eaf8; --dim:#8ea2c8; --dim2:#5f7399;
+  --gold:#f2c45d; --gold2:#ffd98a; --blue:#5b8cff; --blue2:#8fb0ff;
+  --win:#f5c86b; --loss:#55618a; --lossTxt:#a9b7d6;
+  --green:#4cd6a0; --red:#ff7a7a;
+
+  /* 统一的圆角与描边节奏 */
+  --r-sm:8px; --r-md:12px; --r-lg:16px;
+  /* 顶部内高光：让深色面板有厚度，不再是一块死板的色块 */
+  --edge:inset 0 1px 0 rgba(255,255,255,.04);
+  /* 克制的投影：只用来拉开层次，不做发光 */
+  --lift:0 8px 24px -14px rgba(0,0,0,.85);
+}
+
+*{box-sizing:border-box; margin:0; padding:0}
+html{-webkit-text-size-adjust:100%}
+
+/* 全局滚动条：系统默认白条压在深色面板上非常刺眼 */
+::-webkit-scrollbar{width:10px; height:10px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{
+  background:#22375f; border-radius:6px;
+  border:2px solid transparent; background-clip:content-box;
+}
+::-webkit-scrollbar-thumb:hover{background:#31497a; background-clip:content-box}
+::-webkit-scrollbar-corner{background:transparent}
+
+body{
+  background:
+    radial-gradient(1100px 520px at 12% -8%, #14264f 0%, transparent 62%),
+    radial-gradient(880px 440px at 88% -6%, #131f4d 0%, transparent 58%),
+    linear-gradient(180deg, var(--bg) 0%, #05090f 100%);
+  background-attachment:fixed;
+  color:var(--txt);
+  font-family:"Microsoft YaHei","PingFang SC",system-ui,-apple-system,"Segoe UI",sans-serif;
+  min-height:100vh; line-height:1.55;
+  font-variant-numeric:tabular-nums;
+  -webkit-font-smoothing:antialiased;
+}
+/* 面板宽度跟随窗口。
+   原来是死值 1240px —— 窗口最大化后两侧大片留白，逐局表的列被挤到换行、
+   10 人明细也只能两栏硬塞。改成 min(2200px, 96vw)：
+   - 小窗口 / 非最大化：96vw 生效，两侧各留 2% 呼吸位，观感不变
+   - 大屏（1920/2560）：一路撑到 2200px，列宽足够，数据一屏看全
+   - 超宽屏（3440+）：封顶 2200px，避免一行字横跨整屏难以扫读 */
+.wrap{max-width:min(2200px,96vw); margin:0 auto; padding:28px 22px 64px}
+
+/* ===== Hero ===== */
+.hero{
+  display:flex; align-items:center; gap:18px; flex-wrap:wrap;
+  margin-bottom:26px; padding:18px 20px;
+  background:linear-gradient(135deg, rgba(24,40,78,.62), rgba(13,24,48,.42));
+  border:1px solid var(--line); border-radius:var(--r-lg);
+  box-shadow:var(--edge);
+}
+.hex{
+  width:56px; height:56px; flex:0 0 56px; position:relative;
+  display:flex; align-items:center; justify-content:center;
+}
+.hex::before{
+  content:""; position:absolute; inset:2px;
+  background:linear-gradient(160deg,#2f4680,#131f3d);
+  clip-path:polygon(50% 0,93% 25%,93% 75%,50% 100%,7% 75%,7% 25%);
+  border:1px solid var(--gold); opacity:.95;
+}
+.hex b{position:relative; z-index:1; color:var(--gold); font-size:15px;
+  letter-spacing:1px; font-weight:700}
+.hero h1{
+  font-size:26px; font-weight:800; letter-spacing:1.2px; line-height:1.25;
+  background:linear-gradient(92deg,#ffffff,#ffd98a 55%,#f2c45d);
+  -webkit-background-clip:text; background-clip:text;
+  -webkit-text-fill-color:transparent;
+}
+.hero .id{color:var(--dim); font-size:13px; margin-top:3px}
+.hero .id b{color:var(--txt)}
+.chips{display:flex; gap:8px; flex-wrap:wrap; margin-left:auto}
+.chip{
+  font-size:12px; color:var(--blue2); background:rgba(91,140,255,.1);
+  border:1px solid rgba(91,140,255,.32); padding:3px 11px;
+  border-radius:20px; white-space:nowrap;
+}
+
+/* ===== Section ===== */
+section{margin-top:30px}
+.sec-t{display:flex; align-items:baseline; gap:10px; margin-bottom:13px}
+.sec-t h2{font-size:17px; font-weight:700; letter-spacing:.5px}
+.sec-t .bar{
+  width:4px; height:16px; border-radius:2px; align-self:center;
+  background:linear-gradient(180deg,var(--gold),#8a6a1f);
+}
+.sec-t .sub{color:var(--dim2); font-size:12px}
+
+/* ===== KPI ===== */
+.kpis{display:grid; grid-template-columns:repeat(auto-fit,minmax(158px,1fr)); gap:13px}
+.kpi{
+  position:relative; overflow:hidden;
+  background:linear-gradient(180deg,var(--panel2),var(--panel));
+  border:1px solid var(--line); border-radius:var(--r-md);
+  padding:15px 17px 13px;
+  box-shadow:var(--edge);
+  transition:border-color .18s ease, transform .18s ease;
+}
+.kpi:hover{border-color:#2d4779; transform:translateY(-1px)}
+.kpi::after{
+  content:""; position:absolute; top:0; left:0; right:0; height:2px;
+  background:linear-gradient(90deg,transparent,rgba(242,196,93,.72),transparent);
+}
+.kpi .lb{font-size:11.5px; color:var(--dim); margin-bottom:7px}
+.kpi .big{font-size:27px; font-weight:800; letter-spacing:.4px; line-height:1.15}
+.kpi .big .u{font-size:12px; color:var(--dim); font-weight:400; margin-left:2px}
+.kpi .ft{font-size:11px; color:var(--dim2); margin-top:5px}
+.up{color:var(--gold2)} .flat{color:var(--dim)}
+
+/* ===== 分区位置（本区排名 + 同局位置）=====
+   2026-09-27 新增。两块都只用已有数据（DATA.roster 里每局 10 人的 comp / mmr）现算，
+   后端只多下发一个「参考前 X%」的标注值。
+   ⚠️ 本区百分位**不能**用隐藏分分布去算：player_elo.json 的量表零点就是数据主人本人
+   （offset = 锚点 − 主人对手均值），26.4 万人里 98% 挤在 ±25 分内，算出来必然是「前 50%」。
+   所以那一块走「对局评分」分布。 */
+.pos-grid{display:grid; grid-template-columns:1fr 1fr; gap:13px}
+.anc-tbl{width:100%; border-collapse:collapse; font-size:11px; margin-top:8px}
+.anc-tbl th{color:#5f7399; font-weight:600; text-align:right; padding:4px 7px;
+  border-bottom:1px solid #1c2c50; white-space:nowrap}
+.anc-tbl th:first-child{text-align:left}
+.anc-tbl td{text-align:right; padding:4px 7px; white-space:nowrap;
+  border-bottom:1px solid rgba(255,255,255,.05)}
+.anc-tbl td:first-child{text-align:left}
+.anc-tbl tbody tr:last-child td{border-bottom:none}
+@media (max-width:860px){.pos-grid{grid-template-columns:1fr}}
+.pos-card{
+  position:relative; overflow:hidden;
+  background:linear-gradient(180deg,var(--panel2),var(--panel));
+  border:1px solid var(--line); border-radius:var(--r-md);
+  padding:14px 16px 12px; box-shadow:var(--edge);
+}
+.pos-card::after{
+  content:""; position:absolute; top:0; left:0; right:0; height:2px;
+  background:linear-gradient(90deg,transparent,rgba(242,196,93,.6),transparent);
+}
+.pos-card .lb{
+  font-size:11.5px; color:var(--dim);
+  display:flex; align-items:center; justify-content:space-between; gap:8px;
+}
+.pos-card .big{font-size:26px; font-weight:800; line-height:1.2; margin-top:6px; letter-spacing:.3px}
+.pos-card .big .u{font-size:12px; color:var(--dim); font-weight:400; margin-left:2px}
+.pos-card .ft{font-size:10.5px; color:var(--dim2); margin-top:4px}
+.pos-card .pos-svg{margin-top:9px}
+.pos-card .pos-svg svg{width:100%; height:auto; display:block}
+.pos-card .pnote{font-size:10px; color:var(--dim2); margin-top:7px; line-height:1.55}
+.pos-row2{margin-top:10px; padding-top:10px; border-top:1px dashed var(--line2)}
+.pbtn{
+  font:inherit; font-size:10.5px; cursor:pointer;
+  background:rgba(91,140,255,.10); color:var(--blue2);
+  border:1px solid rgba(91,140,255,.28); border-radius:8px;
+  padding:2px 9px; transition:background .15s ease;
+}
+.pbtn:hover{background:rgba(91,140,255,.20)}
+.pbtn.on{background:rgba(242,196,93,.14); color:var(--gold2); border-color:rgba(242,196,93,.34)}
+
+/* ===== 指标卡 ===== */
+.met-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:13px}
+.met-card{
+  position:relative; overflow:hidden;
+  background:linear-gradient(180deg,var(--panel2),var(--panel));
+  border:1px solid var(--line); border-radius:var(--r-md);
+  padding:13px 15px 11px;
+  box-shadow:var(--edge);
+  transition:border-color .18s ease, transform .18s ease;
+}
+.met-card:hover{border-color:#2d4779; transform:translateY(-1px)}
+.met-card::after{
+  content:""; position:absolute; top:0; left:0; right:0; height:2px;
+  background:linear-gradient(90deg,transparent,rgba(91,140,255,.6),transparent);
+}
+.met-card .lb{
+  font-size:11.5px; color:var(--dim); margin-bottom:7px;
+  display:flex; align-items:center; justify-content:space-between;
+}
+.met-card .lb .src{
+  font-size:10px; color:var(--dim2); background:rgba(91,140,255,.08);
+  padding:1px 6px; border-radius:8px;
+}
+.met-card .big{
+  font-size:24px; font-weight:800; letter-spacing:.3px; line-height:1.2;
+  display:flex; align-items:baseline; gap:4px;
+}
+.met-card .big .unit{font-size:11px; color:var(--dim2); font-weight:400}
+.met-card .ft{font-size:10.5px; color:var(--dim2); margin-top:5px}
+
+/* ===== 通用 panel ===== */
+.panel{
+  background:linear-gradient(180deg,var(--panel2),var(--panel));
+  border:1px solid var(--line); border-radius:var(--r-lg);
+  padding:18px 20px;
+  box-shadow:var(--edge);
+}
+
+/* ===== 评分趋势（可切换指标折线图） ===== */
+.trend-head{display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin:2px 0 11px}
+.trend-head .cur{font-size:12px; color:var(--dim); margin-left:auto; white-space:nowrap}
+.trend-head .cur b{color:var(--gold); font-size:15px; font-weight:800}
+.trend-head .cur .u2{color:var(--dim2); font-weight:400; font-size:10.5px}
+#trendCtrl .tbtn{font-size:11.5px; padding:3px 11px}
+
+/* ===== 逐局 10 人明细 ===== */
+.xbtn{
+  font-size:11px; padding:2px 10px; border-radius:12px; cursor:pointer;
+  color:var(--blue2); border:1px solid rgba(91,140,255,.4);
+  background:rgba(91,140,255,.08);
+  transition:.15s ease; white-space:nowrap;
+}
+.xbtn:hover{border-color:var(--gold); color:var(--gold)}
+.xbtn.open{color:#0a1220; background:var(--gold); border-color:var(--gold); font-weight:700}
+tr.det-row>td{
+  background:#0b1426!important; padding:11px 15px;
+  border-bottom:1px solid var(--line);
+  /* ⚠️ 必须显式重置（2026-09-22 修，这是「底部那条横向滚动条」的真正元凶）：
+     `white-space` 是**可继承属性**，而 `.games td{white-space:nowrap}` 正好命中了
+     明细行这个 colspan 的 `<td>` —— 于是 nowrap 一路继承进明细区，
+     把 `.det-foot` 那段长说明文字压成**一整行 1558px**，撑破 `.det-wrap`，
+     再顶出外层 `overflow:auto` 的横向滚动条（用户看到的「拖条」）。
+     明细表内部的 nowrap 由 `.det-team td` 自己显式声明，不受这里影响。 */
+  white-space:normal;
+}
+/* ⚠️ 两条都必须能**收缩到 0**（minmax(0,…)）：
+   `1fr` 的隐含最小值是 `auto` = 内容最小宽度，长内容会把轨道撑破容器
+   （grid blowout）—— 实测 1920 视口下两列被算成 197px / 1569px，
+   红色那列直接冲出容器，把外层 `overflow:auto` 顶出横向滚动条。 */
+.det-wrap{display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:14px; min-width:0}
+@media(max-width:1280px){.det-wrap{grid-template-columns:minmax(0,1fr)}}
+.det-team{
+  border:1px solid var(--line2); border-radius:10px; overflow:hidden;
+  background:#0d1830; min-width:0;
+}
+.det-team .tbl-scroll{overflow-x:auto; overscroll-behavior-x:contain}
+.det-team .tbl-scroll::-webkit-scrollbar{height:6px}
+.det-team .tbl-scroll::-webkit-scrollbar-thumb{
+  background:#2a3f75; border-radius:3px; border:none; background-clip:border-box;
+}
+.det-team .thd{
+  padding:7px 11px; font-size:11.5px; display:flex; gap:9px; align-items:center;
+  border-bottom:1px solid var(--line2); color:var(--dim); background:#0f1c38;
+}
+.det-team .thd b.tw{color:var(--win)} .det-team .thd b.tl{color:var(--lossTxt)}
+.det-team .thd .mine-tag{
+  margin-left:auto; font-size:10px; color:var(--gold);
+  border:1px solid rgba(242,196,93,.5); padding:0 7px; border-radius:8px;
+}
+/* min-width 从 560 提到 680：多了一列「对局评分」，窄窗口下留给横向滚动 */
+/* ⚠️ 明细表要做到「铺满容器 + 永不溢出」，三件事必须一起做：
+   ① `table-layout:fixed` —— 列宽只由下面 th:nth-child 决定，不再被内容撑宽；
+   ② `width:100%` —— 恒等于容器宽度；
+   ③ **去掉 min-width** —— 原来写着 `min-width:560px`，它正是横向滚动条的元凶：
+      它让内层表无论如何不小于 560，再叠上 `.det-wrap` 轨道 `1fr` 的隐含最小宽度
+      （= 内容最小宽度），就把 grid 轨道撑破容器 —— 实测 1920 视口下两列被算成
+      197px / 1569px，红色那列冲出容器，把外层 `overflow:auto` 顶出横向滚动条、
+      右侧列被截断（用户看到的「显示不全 + 拖条」）。
+      容器已经保证有足够宽度（单列 ~926px、双列 ~850px），不需要这个下限。 */
+.det-team table{table-layout:fixed; width:100%; min-width:0; border-collapse:collapse; font-size:11px}
+/* ⚠️⚠️ 2026-09-28 实测：下面 `.det-team th/td` 里写的 padding / font-size / color /
+   position / background **一条都没生效** —— 全被 `.games th/td`（战绩表）盖掉了。
+   两个原因叠在一起：
+     ① 特异性相同（都是 0,1,1）时**源序靠后的赢**，而 `.games th/td` 在本文件更靠后；
+     ② 明细表本身**就嵌在 `table.games` 里面**（`<tr class="det-row"><td colspan=9>`），
+        所以 `table.games th:nth-child(n)` 这类选择器**照样命中明细表的表头**。
+   ⇒ 结果：明细表表头一直渲染成战绩表的样子（11.5px / sticky / 渐变底 / padding 7px 8px）。
+   ⇒ 处理：**不动它**（改回来会动表头视觉，属于另一件事）；
+      只在「必须生效」的属性上用更高特异性单独声明（见下面的 `.det-team table td`）。
+      想让这里整体重新生效，得把选择器收紧到 `.det-team table thead th`（0,2,3）。 */
+.det-team th{
+  color:var(--dim2); font-weight:600; text-align:left; padding:5px 7px;
+  font-size:10.5px; border-bottom:1px solid var(--line2); white-space:nowrap;
+}
+.det-team td{
+  padding:4px 7px; border-bottom:1px solid rgba(22,38,74,.55); white-space:nowrap;
+}
+/* 横向留白 8 → 7px（用户 2026-09-27 要求「收一点」）。
+   必须写成 `.det-team table td`（0,1,2）才压得住 `.games td`（0,1,1）的 7px 8px。 */
+.det-team table td{padding-left:7px; padding-right:7px}
+.det-team tr:last-child td{border-bottom:none}
+/* 明细 7 列宽度（固定布局下按比例铺满容器，总权重 530）。
+   ⚠️ **这里现在才是唯一落点** —— 2026-09-28 之前 JS 的 `<thead>` 里还挂着一份
+      `style="width:..."` 行内宽度（134/70/72/54/54/86/60），行内必胜，
+      所以本块一直是死代码；两份值还不一样。已删行内那份（铁律 45：同一个值两份落点迟早过期）。
+   ⚠️ 选择器必须是 `.det-team table thead th:nth-child(n)`（0,2,3），
+      因为 `table.games th:nth-child(n)`（0,2,2）也会命中明细表表头（明细表嵌在战绩表里）。
+   ⚠️ **英雄列必须让最长的 7 字名「弗雷尔卓德之心」放得下**：
+      11px 字体下 CJK = 11.0px/字 ⇒ 7 字 = 77px；加左右各 7px padding ⇒ 列宽 ≥ 91px。
+      实测（最窄的双列视口 1281，表宽 548）英雄列 = 99/530×548 = 102.3 ⇒ 内容盒 88.3 ✓（余 11px）。
+      实测各视口列宽（108.5/102.3/74.4/55.8/55.8/88.9/62.1）都有余量。
+   ⚠️ 改这里之后**必须**跑 `07_测试\test_dashboard_layout.py`（真 Chromium 量溢出）。 */
+.det-team table thead th:nth-child(1){width:105px}  /* 玩家（名字会折行，收窄给英雄列让位） */
+.det-team table thead th:nth-child(2){width:99px}   /* 英雄（须容纳 7 字名，见上） */
+.det-team table thead th:nth-child(3){width:72px}   /* K / D / A */
+.det-team table thead th:nth-child(4){width:54px}   /* 伤害 */
+.det-team table thead th:nth-child(5){width:54px}   /* 承伤 */
+.det-team table thead th:nth-child(6){width:86px}   /* 隐藏分 */
+.det-team table thead th:nth-child(7){width:60px}   /* 对局评分 */
+.det-team tr.me td{background:rgba(242,196,93,.10)}
+/* ⚠️ 原来写的是 max-width + overflow:hidden + text-overflow:ellipsis —— 但 `.nm` 是
+   <span>（**行内元素**），这几个属性对行内元素**不生效**，所以长名字照样把列撑宽。
+   改用最朴素的「行内 + 允许折行」：名字再长也完整显示（占两行），不截断、不撑宽。
+   （2026-09-22：原先还试过 display:inline-block + max-width:100%，实测在固定布局的
+     单元格里 `max-width:100%` 不生效（仍溢 18px），所以直接回到纯行内。） */
+.det-team .nm{white-space:normal; overflow-wrap:anywhere}
+.det-team .nm.me-n{color:var(--gold); font-weight:700}
+.det-team .dm{color:var(--dim2); font-variant-numeric:tabular-nums}
+/* 2026-09-22：`color` 改为 inherit —— 因为「三项最高」的高亮从「K/D/A 后面那个括号值」
+   移到了 k/d/a 本身。若这里仍写死 var(--txt)，`<b>` 有自己的颜色值就不会继承外层
+   高亮色，紫色高亮会失效。
+   同日再改：K/D/A **一律普通颜色**（用户要求），只有 KDA 最高的那个 `<span>` 带 .hi-kda
+   紫色 —— 也就是说这里 inherit 到的是普通正文色，只有 .hi-kda 那一个例外。 */
+.det-team td .d-kda b{color:inherit; font-weight:700}
+.det-team .hl{color:var(--gold)}
+.det-team .t-delim{color:var(--dim2); font-size:9.5px}
+.det-team .mmr-cell{font-variant-numeric:tabular-nums; white-space:nowrap}
+.det-team .mmr-v{color:var(--gold2); font-weight:700; font-size:13px}
+.det-team .mmr-n{color:var(--dim2); font-size:9.5px; margin-left:3px}
+.det-team .mmr-na{color:var(--dim2); font-style:italic; font-size:10.5px}
+.det-foot{
+  margin-top:9px; padding:8px 11px; font-size:10.5px; color:var(--dim2);
+  border-top:1px dashed var(--line2); background:#0a152b; border-radius:0 0 8px 8px;
+}
+
+/* ===== 图表 ===== */
+.chart-box svg{width:100%; height:auto; display:block}
+.legend{
+  display:flex; gap:16px; font-size:12px; color:var(--dim);
+  margin-top:7px; flex-wrap:wrap;
+}
+.legend i{
+  display:inline-block; width:10px; height:10px; border-radius:50%;
+  margin-right:5px; vertical-align:-1px;
+}
+.legend .dash{width:16px; height:0; border-top:2px dashed var(--dim2); vertical-align:3px}
+
+/* ===== 表格 ===== */
+/* flex-wrap:wrap —— 每日战绩面板在右栏（窄），5 个范围按钮一行放不下，
+   不换行就会把面板撑破。逐局表的 3 个按钮不受影响（够宽）。 */
+.tctrl{display:flex; gap:8px; margin-bottom:11px; align-items:center; flex-wrap:wrap}
+.tbtn{
+  font-size:12px; padding:4px 14px; border-radius:16px; cursor:pointer;
+  color:var(--dim); border:1px solid var(--line); background:var(--panel);
+  transition:.15s ease;
+}
+.tbtn.on{color:#0a1220; background:var(--gold); border-color:var(--gold); font-weight:700}
+.tbtn:hover{border-color:var(--gold)}
+/* 同样用固定布局：明细行（colspan=9）内容一宽就会反过来把战绩表的列撑宽，
+   两个表一起溢出。固定后战绩表的列宽只由表头决定，不受明细内容影响。 */
+table.games{table-layout:fixed; width:100%; border-collapse:collapse; font-size:12.5px}
+.games th{
+  color:var(--dim); font-size:11.5px; font-weight:600; text-align:left;
+  padding:7px 8px; border-bottom:1px solid var(--line); white-space:nowrap;
+  position:sticky; top:0; z-index:1;
+  background:linear-gradient(180deg,var(--panel2),var(--panel));
+}
+.games td{padding:7px 8px; border-bottom:1px solid var(--line2); white-space:nowrap}
+/* 战绩表 9 列宽度 */
+table.games th:nth-child(1){width:60px}   /* 第几场 */
+table.games th:nth-child(2){width:92px}   /* 时间 */
+table.games th:nth-child(3){width:110px}  /* 英雄 */
+table.games th:nth-child(4){width:46px}   /* 结果 */
+table.games th:nth-child(5){width:48px}   /* 时长 */
+table.games th:nth-child(6){width:92px}   /* K / D / A */
+table.games th:nth-child(7){width:112px}  /* 对手质量(隐藏分) */
+table.games th:nth-child(8){width:78px}   /* 局后估分 / 对局评分 */
+table.games th:nth-child(9){width:58px}   /* 明细 */
+/* 兜底：万一某格还是长了，省略而不是把表撑出去（明细行除外，它要完整显示） */
+table.games tr:not(.det-row)>td{overflow:hidden; text-overflow:ellipsis}
+.games tbody tr{transition:background .12s ease}
+.games tr:hover td{background:rgba(91,140,255,.07)}
+.resW{color:var(--win); font-weight:700}
+.resL{color:var(--lossTxt)}
+.ghero{color:var(--txt)}
+.dot{
+  display:inline-block; width:6px; height:6px; border-radius:50%;
+  margin-right:6px; vertical-align:1px;
+}
+.dot.on{background:var(--gold)} .dot.off{background:var(--dim2)}
+.dim-num{color:var(--dim2)}
+.scored{color:var(--blue2); font-weight:600}
+/* 同上：战绩表的 K/D/A 去掉了括号值，**并且不再做良好/较差配色**（用户要求一律普通颜色）。
+   这里仍写 inherit 是为了让 `<b>` 跟随单元格颜色（当前即普通正文色），
+   而不是被 `<b>` 自带的 var(--txt) 固定住 —— 以后若要再引入高亮，只改 <td> 即可。 */
+.kd b{color:inherit; font-weight:700}
+.tfoot{font-size:11.5px; color:var(--dim2); margin-top:9px}
+
+/* ===== 英雄榜 / 每日 ===== */
+.cols{display:grid; grid-template-columns:1.15fr .85fr; gap:14px}
+@media(max-width:860px){.cols{grid-template-columns:1fr}}
+.champ-row{
+  display:grid; grid-template-columns:88px 42px 1fr 52px 62px; gap:8px;
+  align-items:center; padding:6px 0; border-bottom:1px dashed var(--line2);
+  font-size:12.5px;
+}
+.champ-row:last-child{border-bottom:none}
+.c-bar{
+  height:9px; background:#0a1326; border-radius:5px; overflow:hidden;
+  border:1px solid var(--line2);
+}
+.c-bar i{
+  display:block; height:100%; border-radius:5px;
+  background:linear-gradient(90deg,#8a6a1f,var(--gold));
+}
+.c-wr{font-weight:700}
+.c-kda{color:var(--dim); font-size:11.5px}
+.hot{color:var(--dim2); font-size:11px}
+.day-row{
+  display:grid; grid-template-columns:44px 1fr 74px; gap:8px;
+  align-items:center; padding:4px 0; font-size:12px;
+}
+.day-bar{display:flex; height:12px; border-radius:3px; overflow:hidden; background:#0a1326}
+.day-bar i.w{background:linear-gradient(90deg,#8a6a1f,var(--gold))}
+.day-bar i.l{background:#33405f}
+.day-wl{color:var(--dim); text-align:right}
+.day-wl b{color:var(--win); font-weight:700}
+
+/* ===== 方法论 ===== */
+.method-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(235px,1fr)); gap:13px}
+.m-card{
+  background:var(--panel); border:1px solid var(--line);
+  border-radius:var(--r-md); padding:14px 16px; box-shadow:var(--edge);
+}
+.m-card h3{font-size:13.5px; margin-bottom:8px; color:var(--gold)}
+.m-card h3 span{color:var(--dim2); font-size:11px; margin-left:6px; font-weight:400}
+.m-card p{font-size:12px; color:var(--dim); line-height:1.75}
+.m-card p b{color:var(--txt)}
+.warn{border-color:rgba(255,122,122,.35)!important; background:rgba(255,122,122,.05)}
+.warn h3{color:var(--red)}
+.warn p{color:var(--lossTxt)}
+
+footer{
+  margin-top:36px; text-align:center; color:var(--dim2);
+  font-size:11.5px; line-height:1.9;
+}
+footer .ln{border-top:1px solid var(--line2); padding-top:15px}
+
+/* ===== 桌面版操作工具栏 =====
+   只在 pywebview 窗口里显示（JS 检测到 window.pywebview 才加 .on）。
+   浏览器直接打开看板时不会出现，所以不影响 44+11 条断言。 */
+#hdBar{
+  position:fixed; right:20px; bottom:20px; z-index:9999;
+  display:none; flex-direction:column; align-items:flex-end; gap:10px;
+}
+#hdBar.on{display:flex}
+#hdBarPanel{
+  width:330px; padding:14px 16px;
+  background:linear-gradient(180deg,var(--panel2),var(--panel));
+  border:1px solid var(--line); border-radius:var(--r-md);
+  box-shadow:0 18px 44px -18px rgba(0,0,0,.95);
+}
+#hdBarPanel h3{font-size:13px; color:var(--gold); margin-bottom:10px; font-weight:700}
+.hd-row{display:flex; gap:8px; margin-bottom:10px}
+.hd-row > div{flex:1}
+.hd-row label{display:block; font-size:11px; color:var(--dim2); margin-bottom:4px}
+.hd-row input{
+  width:100%; padding:5px 8px; font-size:12px; color:var(--txt);
+  background:#0a1326; border:1px solid var(--line); border-radius:6px;
+  font-variant-numeric:tabular-nums;
+}
+.hd-row input:focus{outline:none; border-color:var(--gold)}
+.hd-btns{display:flex; flex-direction:column; gap:7px}
+/* 次要按钮排成一行：只重算 / 只重建 / 数据目录 */
+.hd-btns-sm{flex-direction:row; gap:6px; margin-top:7px}
+.hd-btns-sm .hd-btn{flex:1; padding:6px 4px; font-size:11px}
+.hd-btn{
+  padding:8px 12px; font-size:12.5px; cursor:pointer; text-align:center;
+  border-radius:8px; border:1px solid var(--line); background:var(--panel);
+  color:var(--txt); transition:.15s ease;
+}
+.hd-btn:hover:not(:disabled){border-color:var(--gold); color:var(--gold)}
+.hd-btn:disabled{opacity:.45; cursor:default}
+.hd-btn.primary{background:var(--gold); color:#0a1220; border-color:var(--gold); font-weight:700}
+.hd-btn.primary:hover:not(:disabled){background:var(--gold2); color:#0a1220}
+#hdOut{
+  display:none; margin-top:10px; max-height:150px; overflow:auto;
+  font-size:11px; line-height:1.6; white-space:pre-wrap;
+  color:var(--dim); background:#0a1326; border:1px solid var(--line2);
+  border-radius:6px; padding:8px 10px;
+}
+#hdOut.on{display:block}
+#hdHint{
+  display:none; margin:-4px 0 10px; font-size:10.5px; line-height:1.65;
+  color:var(--gold); opacity:.9;
+}
+#hdHint.on{display:block}
+/* 「请先登录游戏」提示弹层。
+   ⚠️ 是**页面内**覆盖层，不是原生 alert/confirm —— pywebview 里原生弹窗不保证
+   可用（本项目两次踩过，铁律明令不许用 window.confirm）。默认 display:none，
+   所以浏览器里打开看板/跑 jsdom 断言都看不到它。 */
+#hdPopup{
+  display:none; position:fixed; inset:0; z-index:9999;
+  align-items:center; justify-content:center; background:rgba(4,10,22,.74);
+}
+#hdPopup.on{display:flex}
+#hdPopBox{
+  max-width:460px; margin:0 18px; padding:20px 22px 18px;
+  background:var(--panel2); border:1px solid var(--gold); border-radius:10px;
+  box-shadow:0 18px 48px rgba(0,0,0,.55);
+}
+#hdPopTitle{font-size:14px; font-weight:700; color:var(--gold); margin-bottom:10px}
+#hdPopMsg{font-size:12.5px; line-height:1.75; color:var(--txt); white-space:pre-wrap}
+#hdPopOk{
+  margin-top:16px; padding:8px 18px; font-size:12.5px; font-weight:700;
+  cursor:pointer; background:var(--gold); color:#0a1220;
+  border:1px solid var(--gold); border-radius:6px;
+}
+#hdPopOk:hover{background:var(--gold2); border-color:var(--gold2)}
+/* 管理存档面板（2026-09-22）：一个账号一份，切换秒级；删除走软删 */
+#hdSaves{display:none; margin-top:10px}
+#hdSaves.on{display:block}
+.hd-saves-head{
+  display:flex; align-items:baseline; gap:8px;
+  font-size:11px; color:var(--dim2); margin-bottom:6px;
+}
+.hd-saves-head .sub{margin-left:auto; font-size:10px}
+#hdSavesList{max-height:190px; overflow:auto}
+.hd-save{
+  border:1px solid var(--line2); border-radius:6px; padding:7px 9px;
+  margin-bottom:6px; background:#0a1326;
+}
+.hd-save.cur{border-color:var(--gold)}
+.hd-save .nm{font-size:11.5px; color:var(--txt); font-weight:600}
+.hd-save .nm i{
+  font-style:normal; font-size:9.5px; color:var(--gold);
+  border:1px solid var(--gold); border-radius:4px; padding:0 4px; margin-left:4px;
+}
+.hd-save .kv{font-size:10px; color:var(--dim2); margin-top:3px; line-height:1.6}
+.hd-save .ops{margin-top:5px; display:flex; gap:6px}
+.hd-save .ops .xbtn{font-size:10.5px; padding:2px 9px}
+.hd-saves-foot{margin-top:6px; display:flex; gap:6px}
+/* 进度条：只在任务运行时出现。百分比 / 剩余时间由 app.py 的
+   _job_progress() 每 0.5 秒轮询一次，估算方式见 README。 */
+#hdProg{display:none; margin-top:11px}
+#hdProg.on{display:block}
+.hd-prog-head{
+  display:flex; justify-content:space-between; align-items:baseline;
+  font-size:11px; color:var(--dim); margin-bottom:5px; gap:8px;
+}
+#hdProgStep{color:var(--txt); overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+#hdProgPct{font-variant-numeric:tabular-nums; color:var(--gold); font-weight:700}
+.hd-prog-track{
+  height:7px; border-radius:99px; overflow:hidden;
+  background:#0a1326; border:1px solid var(--line2);
+}
+#hdProgFill{
+  height:100%; width:0%; border-radius:99px;
+  background:linear-gradient(90deg,var(--gold2),var(--gold));
+  transition:width .35s ease;
+}
+#hdProgTime{
+  margin-top:5px; font-size:10.5px; color:var(--dim2);
+  font-variant-numeric:tabular-nums;
+}
+/* ===== 2026-09-21 面板精简 + 停止按钮 =====
+   用户要求：锚点那一堆输入/解释不要展示、去掉「只重算」「只重建看板」，
+   只留关键内容；并且要能中途停止。 */
+.hd-prog-time-row{
+  display:flex; align-items:center; justify-content:space-between;
+  gap:10px; margin-top:5px;
+}
+.hd-prog-time-row #hdProgTime{margin-top:0}
+.hd-btn.danger{
+  padding:3px 12px; font-size:11px; border-radius:99px;
+  color:var(--top-dmg,#ff8f5e); border-color:rgba(255,143,94,.45);
+  background:rgba(255,143,94,.10);
+}
+.hd-btn.danger:hover:not(:disabled){
+  background:rgba(255,143,94,.20); border-color:var(--top-dmg,#ff8f5e); color:var(--top-dmg,#ff8f5e);
+}
+.hd-btn.danger:disabled{opacity:.5; cursor:default}
+/* 面板上唯一保留的状态信息：锚点局 / 上次估算的隐藏分 */
+#hdMeta{
+  display:none; margin-top:10px; padding-top:9px;
+  border-top:1px solid var(--line2);
+  font-size:10.5px; line-height:1.6; color:var(--dim2);
+  font-variant-numeric:tabular-nums;
+}
+#hdMeta.on{display:block}
+#hdMeta.warn{color:var(--gold); opacity:.9}
+#hdToggle{
+  width:46px; height:46px; border-radius:50%; cursor:pointer; border:none;
+  background:linear-gradient(160deg,var(--gold2),var(--gold));
+  color:#0a1220; font-size:11px; font-weight:700;
+  box-shadow:0 10px 26px -10px rgba(0,0,0,.9);
+}
+#hdToggle:hover{filter:brightness(1.08)}
+
+/* ===== 玩家弹层 =====
+   点「逐局战绩 → 明细」里的玩家名打开（见看板 JS 的 openPlayer）。
+   纯前端部分（交手记录）浏览器里也能看；「抓取 TA 最近的对局」那个按钮
+   只有桌面版（window.pywebview 存在）才显示 —— 它要跑 _player_probe.py。 */
+.det-team .nm.pn{cursor:pointer; border-bottom:1px dashed rgba(91,140,255,.45)}
+.det-team .nm.pn:hover{color:var(--gold2); border-bottom-color:var(--gold)}
+#pModal{
+  position:fixed; inset:0; z-index:9998; display:none;
+  background:rgba(3,7,15,.74);
+  align-items:flex-start; justify-content:center; padding:4vh 16px;
+}
+#pModal.on{display:flex}
+.pmodal-box{
+  width:100%; max-width:920px; max-height:88vh; overflow:auto;
+  background:linear-gradient(180deg,var(--panel2),var(--panel));
+  border:1px solid var(--line); border-radius:var(--r-lg);
+  box-shadow:0 26px 70px -20px rgba(0,0,0,.95); padding:18px 20px;
+}
+.pmodal-hd{
+  display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+  margin-bottom:12px; padding-bottom:11px; border-bottom:1px solid var(--line2);
+}
+.pmodal-hd b{font-size:16px; letter-spacing:.4px}
+.pmodal-hd .pclose{margin-left:auto}
+.pm-sec{margin-top:14px}
+.pm-sec > h4{
+  font-size:12.5px; color:var(--gold); font-weight:700; margin-bottom:8px;
+  display:flex; align-items:baseline; gap:8px; flex-wrap:wrap;
+}
+.pm-sec > h4 .sub{color:var(--dim2); font-weight:400; font-size:11px}
+.pm-kpi{display:grid; grid-template-columns:repeat(auto-fit,minmax(134px,1fr)); gap:10px}
+.pm-kpi > div{
+  background:var(--panel); border:1px solid var(--line);
+  border-radius:10px; padding:10px 12px;
+}
+.pm-kpi .lb{font-size:10.5px; color:var(--dim2); margin-bottom:5px}
+.pm-kpi .v{font-size:20px; font-weight:800; color:var(--gold2); line-height:1.2}
+.pm-kpi .v small{font-size:10.5px; color:var(--dim2); font-weight:400; margin-left:3px}
+.pm-kpi .v.na{font-size:12.5px; color:var(--dim2); font-weight:400; font-style:italic}
+.pm-tbl{max-height:330px; overflow:auto; border:1px solid var(--line2); border-radius:10px}
+.pm-tbl table{width:100%; border-collapse:collapse; font-size:11.5px}
+.pm-tbl th{
+  position:sticky; top:0; z-index:1; background:#0f1c38; color:var(--dim2);
+  font-size:10.5px; font-weight:600; text-align:left; padding:6px 9px;
+  border-bottom:1px solid var(--line2); white-space:nowrap;
+}
+.pm-tbl td{padding:5px 9px; border-bottom:1px solid rgba(22,38,74,.55); white-space:nowrap}
+.pm-tbl tr:last-child td{border-bottom:none}
+.pm-tbl tr:hover td{background:rgba(91,140,255,.07)}
+.pm-note{font-size:10.5px; color:var(--dim2); line-height:1.75; margin-top:8px}
+.pm-note b{color:var(--txt)}
+.pm-act{display:flex; gap:9px; align-items:center; flex-wrap:wrap; margin-top:10px}
+.pm-act .xbtn{padding:5px 14px; font-size:11.5px}
+.pm-act .xbtn[disabled]{opacity:.45; cursor:default}
+.pm-status{font-size:11px; color:var(--dim2)}
+
+/* ============================================================
+   2026-09-21 第三轮：视角切换 / 范围选择器 / 三项最高高亮 / 对局评分
+   ------------------------------------------------------------
+   新增的选择器全部是**追加**，没有改动上面任何一个已有的选择器 ——
+   _verify_dash.js 的 44 条、_verify_player.js 的断言都依赖原有 class 名。
+   ============================================================ */
+
+/* 三项「最高」的专用色。
+   刻意避开已有的金(--gold 视角行/胜)、绿(--green KDA 良好)、红(--red 警告)、
+   蓝(--blue 主色)，否则同一张表里会撞色、看不出「这是最高标记」。 */
+:root{
+  --top-kda:#c79bff;    /* 紫 —— KDA 最高 */
+  --top-dmg:#ff8f5e;    /* 橙 —— 伤害最高 */
+  --top-taken:#5ad2e6;  /* 青 —— 承伤最高 */
+}
+
+/* ===== Hero 区的视角切换 ===== */
+.viewbar{
+  display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+  margin-top:8px; font-size:11.5px; color:var(--dim2);
+}
+.viewbar .vlb{
+  font-size:10.5px; letter-spacing:.6px; color:var(--dim2);
+  border:1px solid var(--line); border-radius:10px; padding:1px 8px;
+}
+.viewbar #viewSel{
+  font-family:inherit; font-size:12px; color:var(--txt);
+  background:var(--panel); border:1px solid var(--line); border-radius:10px;
+  padding:4px 9px; max-width:290px; cursor:pointer; outline:none;
+  transition:border-color .15s ease;
+}
+.viewbar #viewSel:hover,.viewbar #viewSel:focus{border-color:var(--gold)}
+.viewbar #viewSel option,.viewbar #viewSel optgroup{
+  background:var(--panel2); color:var(--txt);
+}
+.viewbar .vnote{font-size:10.5px; color:var(--dim2)}
+.chip-view{
+  color:var(--gold2) !important; background:rgba(242,196,93,.12) !important;
+  border-color:rgba(242,196,93,.42) !important; font-weight:700;
+}
+
+/* ===== 范围选择器的标签与说明（轨迹图 / 指标面板） ===== */
+.tctrl .tctrl-lb{
+  font-size:10.5px; letter-spacing:.6px; color:var(--dim2);
+  border:1px solid var(--line); border-radius:10px; padding:2px 9px;
+}
+.tctrl .tctrl-note{font-size:10.5px; color:var(--dim2); margin-left:auto}
+#trajCtrl,#metCtrl{margin-bottom:12px}
+#trajCtrl .tbtn,#metCtrl .tbtn{font-size:11.5px; padding:3px 12px}
+
+/* ===== 10 人明细：三项最高 =====
+   只做一件事：把**最高那个数**换成对应颜色。
+   不加角标、不加标签、不加底色、不加边框 —— 任何额外盒子都会把列挤宽、
+   把明细表顶出横向滚动（2026-09-21 用户明确要求「恢复原样」）。
+   颜色定义不带 .det-team 前缀，因为底部图例也在用同一套色。 */
+.hi-kda{color:var(--top-kda) !important; font-weight:800}
+.hi-dmg{color:var(--top-dmg) !important; font-weight:800}
+.hi-taken{color:var(--top-taken) !important; font-weight:800}
+.det-legend{
+  display:flex; align-items:center; gap:14px; flex-wrap:wrap;
+  font-size:10.5px; color:var(--dim2); margin-top:9px;
+}
+.det-legend i{font-style:normal; font-weight:800}
+
+/* ===== 对局评分（明细列 + 弹层列） ===== */
+.det-team .comp-cell,.pm-tbl .comp-cell{font-variant-numeric:tabular-nums; white-space:nowrap}
+.det-team .comp-v{
+  color:var(--gold2); font-weight:800; font-size:13px;
+}
+.pm-tbl .comp-v{color:var(--gold2); font-weight:800}
+/* 弹层里「联手/交手」两张表各占一块，表头留白别太挤 */
+.pm-sec .pm-tbl + .pm-note{margin-top:6px}

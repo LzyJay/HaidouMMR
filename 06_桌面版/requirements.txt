@@ -1,0 +1,10 @@
+# 海斗隐藏分 · 桌面版打包依赖
+#
+# 安装：
+#     python -m pip install -r requirements.txt
+# 或者直接跑 build.bat —— 它会自动建 .venv-build 并装好这两个包。
+#
+# 注意：只有「打包 exe」需要这两个包。
+# 看板本身和全部算法脚本都是纯标准库，零第三方依赖。
+pywebview>=5.0
+pyinstaller>=6.0
